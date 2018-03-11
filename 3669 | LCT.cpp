@@ -1,18 +1,20 @@
 #include<iostream>
 #include<cstdio>
+#include<cstring>
 #include<algorithm>
 #define maxn 200010
 #define INF 1000000000
 using namespace std;
-int fa[maxn],son[maxn][2],val[maxn],mx[maxn],rev[maxn],st[maxn];
-int p[maxn],n,m,ans=INF;
+int ans=INF,n,m,num,top;
+int son[maxn][2],val[maxn],mx[maxn],st[maxn],fa[maxn],p[maxn];
+bool rev[maxn];
 struct node{int u,v,a,b;}e[maxn];
 bool cmp(node x,node y){return x.a<y.a;}
 bool isroot(int x){
-	return (son[fa[x]][0]!=x)&&(son[fa[x]][1]!=x);
+	return (son[fa[x]][1]!=x)&&(son[fa[x]][0]!=x);
 }
 int find(int x){
-	if(p[x]==x)return x;
+	if(x==p[x])return p[x];
 	return p[x]=find(p[x]);
 }
 void pushup(int x){
@@ -24,8 +26,8 @@ void pushup(int x){
 void pushdown(int x){
 	if(rev[x]){
 		rev[x]^=1;
-		swap(son[x][1],son[x][0]);
-		rev[son[x][1]]^=1;rev[son[x][0]]^=1;
+		swap(son[x][0],son[x][1]);
+		rev[son[x][0]]^=1;rev[son[x][1]]^=1;
 	}
 }
 void rotate(int x){
@@ -37,7 +39,7 @@ void rotate(int x){
 	pushup(y);pushup(x);
 }
 void splay(int x){
-	int top=0;st[++top]=x;
+	top=0;st[++top]=x;
 	for(int i=x;!isroot(i);i=fa[i])st[++top]=fa[i];
 	for(int i=top;i;i--)pushdown(st[i]);
 	while(!isroot(x)){
@@ -56,45 +58,39 @@ void reroot(int x){
 	access(x);splay(x);rev[x]^=1;
 }
 int query(int x,int y){
-	reroot(x);access(y);splay(y);
-	return mx[y];
+	reroot(x);access(y);splay(y);return mx[y];
 }
 void cut(int x,int y){
-	reroot(x);
-	access(y);
-	splay(y);
-	fa[x]=son[y][0]=0;
-	pushup(y);
+	reroot(x);access(y);splay(y);
+	fa[x]=0;son[y][0]=0;pushup(y);
 }
-void join(int x,int y){
+void link(int x,int y){
 	reroot(x);fa[x]=y;
 }
 int main(){
 	scanf("%d%d",&n,&m);
-	for(int i=1;i<=m;i++)
-		scanf("%d%d%d%d",&e[i].u,&e[i].v,&e[i].a,&e[i].b);
+	for(int i=1;i<=m;i++)scanf("%d%d%d%d",&e[i].u,&e[i].v,&e[i].a,&e[i].b);
 	sort(e+1,e+m+1,cmp);
 	for(int i=1;i<=n;i++)p[i]=i;
 	for(int i=1;i<=m;i++){
 		int u=e[i].u,v=e[i].v,a=e[i].a,b=e[i].b;
 		if(find(u)==find(v)){
-			int t=query(u,v);
-			if(val[t]>e[i].b){
-				cut(t,e[t-n].u);
-				cut(t,e[t-n].v);
+			int tmp=query(u,v);
+			if(val[tmp]>b){
+				cut(tmp,e[tmp-n].u);
+				cut(tmp,e[tmp-n].v);
 			}
 			else{
-				if(find(1)==find(n))
-					ans=min(ans,e[i].a+val[query(1,n)]);
+				if(find(1)==find(n))ans=min(ans,val[query(1,n)]+e[i].a);
 				continue;
 			}
 		}
 		else p[find(u)]=find(v);
-		val[i+n]=e[i].b;mx[i+n]=n+i;
-		join(i+n,e[i].u);join(i+n,e[i].v);
-		if(find(1)==find(n))ans=min(ans,e[i].a+val[query(1,n)]);
+		val[i+n]=b;mx[i+n]=i+n;
+		link(i+n,u);link(i+n,v);
+		if(find(1)==find(n))ans=min(ans,val[query(1,n)]+e[i].a);
 	}
-	if(find(1)==find(n))printf("%d",ans);
+	if(find(1)==find(n))printf("%d\n",ans);
 	else puts("-1");
 	return 0;
 }
